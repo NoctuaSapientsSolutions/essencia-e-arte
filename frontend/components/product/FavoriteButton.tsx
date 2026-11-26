@@ -2,37 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { HeartIcon } from "@/components/ui/icons";
+import { FAVORITES_CHANGE_EVENT, readFavorites, writeFavorites } from "@/lib/favorites/favorites";
 
-const STORAGE_KEY = "ea-favoritos-v1";
-
-function readFavorites(): string[] {
-  try {
-    const parsed: unknown = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "[]");
-    return Array.isArray(parsed) ? (parsed as string[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-// Favoritos guardados no navegador por enquanto. Na API real, viram um recurso da conta.
 export function FavoriteButton({ productId, productName }: { productId: string; productName: string }) {
   const [favorite, setFavorite] = useState(false);
 
   useEffect(() => {
     // Leitura após a hidratação, para não divergir do HTML do servidor.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFavorite(readFavorites().includes(productId));
+    const sync = () => setFavorite(readFavorites().includes(productId));
+    sync();
+    window.addEventListener(FAVORITES_CHANGE_EVENT, sync);
+    return () => window.removeEventListener(FAVORITES_CHANGE_EVENT, sync);
   }, [productId]);
 
   const toggle = () => {
     const current = readFavorites();
     const next = favorite ? current.filter((id) => id !== productId) : [...current, productId];
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // Sem armazenamento disponível, o estado vale só nesta tela.
-    }
-    setFavorite(!favorite);
+    writeFavorites(next);
   };
 
   return (

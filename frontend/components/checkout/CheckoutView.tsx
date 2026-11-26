@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonBlock } from "@/components/ui/SkeletonLoader";
-import { FormField } from "@/components/checkout/FormField";
+import { FormField } from "@/components/ui/FormField";
 import { ShippingOptions } from "@/components/checkout/ShippingOptions";
 import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
 import { OrderConfirmation } from "@/components/checkout/OrderConfirmation";
