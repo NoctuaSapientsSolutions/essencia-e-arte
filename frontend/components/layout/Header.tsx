@@ -1,17 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { CartLink } from "@/components/cart/CartLink";
 import { DesktopNavigation } from "@/components/navigation/DesktopNavigation";
 import { MobileNavigation } from "@/components/navigation/MobileNavigation";
-import { BagIcon, ChatIcon, HeartIcon, SearchIcon, UserIcon } from "@/components/ui/icons";
+import { ChatIcon, HeartIcon, SearchIcon, UserIcon } from "@/components/ui/icons";
 import { WHATSAPP_URL, STORE_NAME } from "@/lib/config";
 import { utilityLinks } from "@/lib/navigation";
 
-type HeaderProps = {
-  cartCount?: number;
-};
-
-// Cabeçalho sticky. Os contadores e ações virão do estado do carrinho nas próximas etapas.
-export function Header({ cartCount = 0 }: HeaderProps) {
+// Cabeçalho sticky. O contador do carrinho é lido do contexto no componente CartLink.
+export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 lg:gap-8">
@@ -47,16 +44,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
             <ChatIcon className="h-5 w-5" />
           </IconLink>
 
-          <IconLink href={utilityLinks.cart} label={`Carrinho, ${cartCount} itens`}>
-            <span className="relative">
-              <BagIcon className="h-5 w-5" />
-              {cartCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-forest px-1 text-[10px] text-cream">
-                  {cartCount}
-                </span>
-              )}
-            </span>
-          </IconLink>
+          <CartLink />
         </div>
       </div>
     </header>
