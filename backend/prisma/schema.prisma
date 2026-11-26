@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductKind {
+  raw
+  finished
+  kit
+}
+
+enum StockStatus {
+  in_stock
+  low_stock
+  out_of_stock
+}
+
+enum FragranceFamily {
+  floral
+  citrica
+  amadeirada
+  frutal
+  doce
+  herbal
+  fresca
+}
+
+enum PaymentMethod {
+  pix
+  cartao
+  boleto
+}
+
+enum OrderStatus {
+  pending
+  paid
+  shipped
+  cancelled
+}
+
+model Category {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  name        String
+  description String
+  kind        ProductKind
+  products    Product[]
+}
+
+model Product {
+  id               String      @id @default(cuid())
+  slug             String      @unique
+  name             String
+  kind             ProductKind
+  categoryId       String
+  category         Category    @relation(fields: [categoryId], references: [id])
+  shortDescription String
+  description      String
+  badges           String[]    @default([])
+  ratingAverage    Float?
+  ratingCount      Int?
+  createdAt        DateTime    @default(now())
+
+  images    ProductImage[]
+  variants  Variant[]
+  fragrance Fragrance?
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  src       String
+  alt       String
+  width     Int
+  height    Int
+  position  Int     @default(0)
+}
+
+model Variant {
+  id         String @id @default(cuid())
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku        String  @unique
+  label      String
+  attributes Json
+  priceCents Int
+
+  stock      Stock?
+  orderItems OrderItem[]
+}
+
+model Stock {
+  variantId String      @id
+  variant   Variant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  quantity  Int
+  status    StockStatus
+}
+
+model Fragrance {
+  id               String          @id @default(cuid())
+  productId        String          @unique
+  product          Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  family           FragranceFamily
+  notesTop         String[]
+  notesHeart       String[]
+  notesBase        String[]
+  intensity        Int
+  applications     String[]
+  recommendedUsage String?
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  orders       Order[]
+}
+
+model Order {
+  id                 String        @id @default(cuid())
+  orderCode          String        @unique
+  userId             String?
+  user               User?         @relation(fields: [userId], references: [id])
+  customerName       String
+  customerEmail      String
+  shippingCep        String
+  shippingAddress    String
+  shippingCity       String
+  shippingState      String
+  shippingOptionId   String
+  shippingLabel      String
+  shippingPriceCents Int
+  paymentMethod      PaymentMethod
+  subtotalCents      Int
+  discountCents      Int           @default(0)
+  totalCents         Int
+  status             OrderStatus   @default(pending)
+  createdAt          DateTime      @default(now())
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id             String  @id @default(cuid())
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId      String
+  variant        Variant @relation(fields: [variantId], references: [id])
+  productName    String
+  variantLabel   String
+  sku            String
+  unitPriceCents Int
+  quantity       Int
+  lineTotalCents Int
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}

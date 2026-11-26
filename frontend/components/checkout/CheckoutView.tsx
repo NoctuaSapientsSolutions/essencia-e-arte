@@ -8,9 +8,10 @@ import { ShippingOptions } from "@/components/checkout/ShippingOptions";
 import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
 import { OrderConfirmation } from "@/components/checkout/OrderConfirmation";
 import { validateCart, type CartValidation } from "@/lib/api/cart";
-import { createMockOrder, type PaymentMethodId } from "@/lib/api/checkout";
+import { createOrder, type PaymentMethodId } from "@/lib/api/checkout";
 import { formatCep, isValidCep, quoteShipping, type ShippingOption } from "@/lib/api/shipping";
 import { useCart } from "@/lib/cart/CartContext";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { formatPrice } from "@/lib/formatters/price";
 
 const UF_OPTIONS = [
@@ -48,6 +49,7 @@ type OrderSnapshot = { orderId: string; totalCents: number; email: string };
 
 export function CheckoutView() {
   const { items, ready, clear } = useCart();
+  const { token } = useAuth();
   const [validation, setValidation] = useState<CartValidation | null>(null);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState | "shipping", string>>>({});
@@ -55,7 +57,9 @@ export function CheckoutView() {
   const [selectedShippingId, setSelectedShippingId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("pix");
   const [submitting, setSubmitting] = useState(false);
+  const [quotingShipping, setQuotingShipping] = useState(false);
   const [orderSnapshot, setOrderSnapshot] = useState<OrderSnapshot | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Revalida o carrinho como faria o POST /cart/validate, igual à página do carrinho.
   useEffect(() => {
@@ -122,14 +126,16 @@ export function CheckoutView() {
     setSelectedShippingId(null);
   };
 
-  const handleQuoteShipping = () => {
+  const handleQuoteShipping = async () => {
     if (!isValidCep(form.cep)) {
       setErrors((current) => ({ ...current, cep: "Informe um CEP válido, com 8 dígitos." }));
       return;
     }
-    const options = quoteShipping(form.cep);
+    setQuotingShipping(true);
+    const options = await quoteShipping(form.cep);
     setShippingOptions(options);
     setSelectedShippingId(options?.[0]?.id ?? null);
+    setQuotingShipping(false);
   };
 
   const validateForm = (): boolean => {
@@ -151,13 +157,30 @@ export function CheckoutView() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!validateForm() || submitting) return;
+    if (!validateForm() || submitting || !shippingOption) return;
 
     setSubmitting(true);
-    const order = await createMockOrder();
-    setOrderSnapshot({ orderId: order.orderId, totalCents, email: form.email });
-    clear();
-    setSubmitting(false);
+    setSubmitError(null);
+    try {
+      const order = await createOrder({
+        customer: { name: form.name, email: form.email },
+        shipping: {
+          cep: form.cep,
+          address: `${form.street}, ${form.number}${form.complement ? ` - ${form.complement}` : ""} - ${form.neighborhood}`,
+          city: form.city,
+          state: form.uf,
+          optionId: shippingOption.id,
+        },
+        paymentMethod,
+        items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+      }, token);
+      setOrderSnapshot({ orderId: order.orderId, totalCents, email: form.email });
+      clear();
+    } catch {
+      setSubmitError("Não foi possível finalizar o pedido agora. Tente novamente em instantes.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -212,9 +235,10 @@ export function CheckoutView() {
             <button
               type="button"
               onClick={handleQuoteShipping}
-              className="h-11 rounded-md border border-forest px-4 text-sm font-medium text-forest hover:bg-cream"
+              disabled={quotingShipping}
+              className="h-11 rounded-md border border-forest px-4 text-sm font-medium text-forest hover:bg-cream disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Calcular frete
+              {quotingShipping ? "Calculando…" : "Calcular frete"}
             </button>
           </div>
 
@@ -315,6 +339,12 @@ export function CheckoutView() {
         <div className="border-t border-border pt-4">
           <Row label="Total" value={formatPrice(totalCents)} strong />
         </div>
+
+        {submitError && (
+          <p role="alert" className="text-sm text-stock-out">
+            {submitError}
+          </p>
+        )}
 
         <button
           type="submit"

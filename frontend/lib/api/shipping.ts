@@ -1,6 +1,4 @@
-// Simula POST /shipping/quote: calcula opções de frete a partir do CEP.
-// Determinístico pelos dígitos do CEP, para o protótipo parecer uma cotação real
-// sem depender de uma API externa dos Correios.
+import { apiFetch } from "@/lib/api/client";
 
 export interface ShippingOption {
   id: string;
@@ -18,28 +16,12 @@ export function isValidCep(value: string): boolean {
   return value.replace(/\D/g, "").length === 8;
 }
 
-export function quoteShipping(cep: string): ShippingOption[] | null {
-  const digits = cep.replace(/\D/g, "");
-  if (digits.length !== 8) return null;
-
-  const seed = digits.split("").reduce((sum, digit) => sum + Number(digit), 0);
-  const economicPriceCents = 1490 + (seed % 7) * 100;
-  const expressPriceCents = economicPriceCents + 1800 + (seed % 5) * 200;
-  const economicDays = 5 + (seed % 5);
-  const expressDays = 2 + (seed % 3);
-
-  return [
-    {
-      id: "standard",
-      label: "Entrega econômica",
-      description: `Chega em até ${economicDays} dias úteis`,
-      priceCents: economicPriceCents,
-    },
-    {
-      id: "express",
-      label: "Entrega expressa",
-      description: `Chega em até ${expressDays} dias úteis`,
-      priceCents: expressPriceCents,
-    },
-  ];
+/** POST /shipping/quote */
+export async function quoteShipping(cep: string): Promise<ShippingOption[] | null> {
+  if (!isValidCep(cep)) return null;
+  const { options } = await apiFetch<{ options: ShippingOption[] }>("/shipping/quote", {
+    method: "POST",
+    body: JSON.stringify({ cep }),
+  });
+  return options;
 }

@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { FormField } from "@/components/ui/FormField";
+import { sendContactMessage } from "@/lib/api/contact";
 
 type FormState = { name: string; email: string; message: string };
 const INITIAL_FORM: FormState = { name: "", email: "", message: "" };
@@ -10,13 +11,15 @@ export function ContactForm() {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const updateField = (field: keyof FormState, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const nextErrors: Partial<FormState> = {};
@@ -25,10 +28,18 @@ export function ContactForm() {
     if (!form.message.trim()) nextErrors.message = "Escreva sua mensagem.";
 
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0 || sending) return;
 
-    // Protótipo: ainda não há backend para receber a mensagem.
-    setSent(true);
+    setSending(true);
+    setSendError(null);
+    try {
+      await sendContactMessage(form);
+      setSent(true);
+    } catch {
+      setSendError("Não foi possível enviar sua mensagem agora. Tente novamente em instantes ou fale pelo WhatsApp.");
+    } finally {
+      setSending(false);
+    }
   };
 
   if (sent) {
@@ -81,11 +92,18 @@ export function ContactForm() {
         )}
       </div>
 
+      {sendError && (
+        <p role="alert" className="text-sm text-stock-out">
+          {sendError}
+        </p>
+      )}
+
       <button
         type="submit"
-        className="h-12 w-full rounded-md bg-forest text-sm font-medium text-cream hover:bg-forest-700 sm:w-auto sm:px-8"
+        disabled={sending}
+        className="h-12 w-full rounded-md bg-forest text-sm font-medium text-cream hover:bg-forest-700 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:px-8"
       >
-        Enviar mensagem
+        {sending ? "Enviando…" : "Enviar mensagem"}
       </button>
     </form>
   );
