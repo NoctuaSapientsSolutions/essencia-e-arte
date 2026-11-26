@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db.js";
 import { HttpError } from "../middleware/error.js";
-import { optionalAuth } from "../middleware/auth.js";
+import { optionalAuth, requireAuth } from "../middleware/auth.js";
 import { isValidCep, quoteShipping } from "../lib/shippingQuote.js";
 import { applyCoupon } from "../lib/coupons.js";
 import { discountPercentFor, paymentMethods } from "../lib/paymentMethods.js";
@@ -12,6 +12,47 @@ export const ordersRouter = Router();
 
 ordersRouter.get("/payment-methods", (_req, res) => {
   res.json(paymentMethods);
+});
+
+const orderInclude = { items: true } as const;
+
+function serializeOrder(order: Awaited<ReturnType<typeof findOrdersForUser>>[number]) {
+  return {
+    orderId: order.orderCode,
+    createdAt: order.createdAt.toISOString(),
+    status: order.status,
+    paymentMethod: order.paymentMethod,
+    shippingLabel: order.shippingLabel,
+    subtotalCents: order.subtotalCents,
+    discountCents: order.discountCents,
+    shippingPriceCents: order.shippingPriceCents,
+    totalCents: order.totalCents,
+    items: order.items.map((item) => ({
+      productName: item.productName,
+      variantLabel: item.variantLabel,
+      sku: item.sku,
+      unitPriceCents: item.unitPriceCents,
+      quantity: item.quantity,
+      lineTotalCents: item.lineTotalCents,
+    })),
+  };
+}
+
+function findOrdersForUser(userId: string) {
+  return prisma.order.findMany({ where: { userId }, include: orderInclude, orderBy: { createdAt: "desc" } });
+}
+
+/** GET /orders: pedidos do usuário autenticado. */
+ordersRouter.get("/", requireAuth, async (req, res) => {
+  const orders = await findOrdersForUser(req.auth!.userId);
+  res.json(orders.map(serializeOrder));
+});
+
+/** GET /orders/:orderCode: detalhe de um pedido do próprio usuário. */
+ordersRouter.get("/:orderCode", requireAuth, async (req, res) => {
+  const order = await prisma.order.findUnique({ where: { orderCode: req.params.orderCode }, include: orderInclude });
+  if (!order || order.userId !== req.auth!.userId) throw new HttpError(404, "Pedido não encontrado");
+  res.json(serializeOrder(order));
 });
 
 const bodySchema = z.object({

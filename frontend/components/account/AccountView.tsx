@@ -4,13 +4,14 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { FormField } from "@/components/ui/FormField";
 import { SkeletonBlock } from "@/components/ui/SkeletonLoader";
+import { OrderHistory } from "@/components/account/OrderHistory";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 type Mode = "login" | "register";
 
 export function AccountView() {
-  const { user, ready, login, register, logout } = useAuth();
+  const { user, token, ready, login, register, logout } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
@@ -27,25 +28,29 @@ export function AccountView() {
 
   if (user) {
     return (
-      <div className="mx-auto mt-10 max-w-md text-center">
-        <p className="font-display text-3xl text-forest">Olá, {user.name.split(" ")[0]}</p>
-        <p className="mt-2 text-sm text-muted">{user.email}</p>
+      <div className="mx-auto max-w-2xl">
+        <div className="mt-10 text-center">
+          <p className="font-display text-3xl text-forest">Olá, {user.name.split(" ")[0]}</p>
+          <p className="mt-2 text-sm text-muted">{user.email}</p>
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <Link
-            href="/favoritos"
-            className="inline-flex h-11 items-center justify-center rounded-md bg-forest px-6 text-sm font-medium text-cream hover:bg-forest-700"
-          >
-            Ver meus favoritos
-          </Link>
-          <button
-            type="button"
-            onClick={logout}
-            className="inline-flex h-11 items-center justify-center rounded-md border border-forest px-6 text-sm font-medium text-forest hover:bg-cream"
-          >
-            Sair da conta
-          </button>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/favoritos"
+              className="inline-flex h-11 items-center justify-center rounded-md bg-forest px-6 text-sm font-medium text-cream hover:bg-forest-700"
+            >
+              Ver meus favoritos
+            </Link>
+            <button
+              type="button"
+              onClick={logout}
+              className="inline-flex h-11 items-center justify-center rounded-md border border-forest px-6 text-sm font-medium text-forest hover:bg-cream"
+            >
+              Sair da conta
+            </button>
+          </div>
         </div>
+
+        {token && <OrderHistory token={token} />}
       </div>
     );
   }
