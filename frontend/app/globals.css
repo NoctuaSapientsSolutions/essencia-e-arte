@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Tokens de design — Essência & Arte
+ * Fonte única de verdade para cores, tipografia, raios e sombras.
+ * Use as classes geradas pelo Tailwind (ex.: bg-forest, text-cream, font-display).
+ */
+@theme {
+  /* Paleta da marca */
+  --color-forest: #173a27; /* verde-floresta: ações principais, cabeçalho */
+  --color-forest-700: #10291c; /* hover de elementos verde-floresta */
+  --color-olive: #718f3a; /* verde-oliva: destaques e estados positivos */
+  --color-cream: #f5f0e6; /* creme: fundos de seção */
+  --color-gold: #b89a5a; /* dourado: detalhes decorativos e bordas */
+  --color-gold-700: #8a6f3c; /* dourado escuro: texto dourado com contraste */
+  --color-brown: #6a4a32; /* marrom: textos de apoio e madeira */
+  --color-charcoal: #252525; /* grafite: texto principal */
+  --color-white: #ffffff;
+
+  /* Cores semânticas (texto, fundo, bordas) */
+  --color-background: var(--color-white);
+  --color-surface: var(--color-cream);
+  --color-foreground: var(--color-charcoal);
+  --color-muted: #5c5a55; /* texto secundário, passa em AA sobre branco e creme */
+  --color-border: #e4dccb;
+  --color-accent: var(--color-forest);
+
+  /* Estados de estoque e feedback */
+  --color-stock-ok: var(--color-olive);
+  --color-stock-low: #b06a1f; /* estoque baixo, nunca só por cor: sempre com texto */
+  --color-stock-out: #8c2f2f; /* esgotado */
+
+  /* Tipografia */
+  --font-display: var(--font-cormorant), Georgia, serif; /* títulos e frases de marca */
+  --font-sans: var(--font-manrope), system-ui, sans-serif; /* navegação, preços, formulários */
+
+  /* Raios */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-pill: 9999px;
+
+  /* Sombras */
+  --shadow-card: 0 1px 2px rgb(23 58 39 / 0.06), 0 4px 16px rgb(23 58 39 / 0.06);
+  --shadow-floating: 0 12px 40px rgb(23 58 39 / 0.18);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    color: var(--color-forest);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold-700);
+    outline-offset: 2px;
+  }
 }
