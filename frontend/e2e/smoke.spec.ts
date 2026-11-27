@@ -12,12 +12,31 @@ test("categoria de essências lista produtos", async ({ page }) => {
   expect(await cards.count()).toBeGreaterThan(0);
 });
 
+// A rota usa Partial Prerendering: logo após a navegação, a página pode estar numa transição
+// momentânea entre o conteúdo anterior e o novo. Espera a contagem de produtos estabilizar
+// (mesmo valor em duas leituras seguidas) antes de comparar, para não ler um estado intermediário.
+async function countSettledProducts(page: import("@playwright/test").Page): Promise<number> {
+  await expect(page.locator("article").first()).toBeVisible();
+  await page.waitForLoadState("networkidle");
+
+  let count = await page.locator("article").count();
+  await expect
+    .poll(async () => {
+      const next = await page.locator("article").count();
+      const stable = next === count;
+      count = next;
+      return stable;
+    }, { timeout: 5000 })
+    .toBe(true);
+  return count;
+}
+
 test("filtro por aplicação reduz a lista de produtos", async ({ page }) => {
   await page.goto("/categorias/essencias");
-  const totalSemFiltro = await page.locator("article").count();
+  const totalSemFiltro = await countSettledProducts(page);
 
   await page.goto("/categorias/essencias?aplicacao=difusor");
-  const totalComFiltro = await page.locator("article").count();
+  const totalComFiltro = await countSettledProducts(page);
 
   expect(totalComFiltro).toBeGreaterThan(0);
   expect(totalComFiltro).toBeLessThan(totalSemFiltro);
