@@ -13,11 +13,18 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-// A página só delega para um componente com Suspense: o acesso a `params` fica dentro da fronteira.
-export default function ProductPage({ params }: PageProps) {
+// A validação do produto roda antes de qualquer <Suspense>, para que um slug inexistente
+// chegue a notFound() antes do Next começar a fazer streaming da resposta (e assim o status
+// HTTP ainda possa ser 404, não 200). Só o restante do conteúdo (que não decide o 404) fica
+// atrás de uma fronteira de Suspense interna.
+export default async function ProductPage({ params }: PageProps) {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product) notFound();
+
   return (
     <Suspense fallback={<ProductPageFallback />}>
-      <ProductContent params={params} />
+      <ProductContent product={product} />
     </Suspense>
   );
 }
@@ -36,11 +43,7 @@ function ProductPageFallback() {
   );
 }
 
-async function ProductContent({ params }: PageProps) {
-  const { slug } = await params;
-  const product = await getProductBySlug(slug);
-  if (!product) notFound();
-
+async function ProductContent({ product }: { product: Product }) {
   const [categories, stock, allProducts] = await Promise.all([
     getCategories(),
     getStockForProduct(product.id),
