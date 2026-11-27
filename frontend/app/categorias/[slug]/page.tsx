@@ -71,6 +71,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
 
           {result.items.length > 0 ? (
             <>
+              <h2 className="sr-only">Produtos da categoria</h2>
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
                 {result.items.map((product) => (
                   <ProductCard key={product.id} product={product} stockStatus={stockByProductId[product.id]} />
