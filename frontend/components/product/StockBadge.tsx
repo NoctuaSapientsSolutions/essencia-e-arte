@@ -3,7 +3,7 @@ import type { StockStatus } from "@/types/catalog";
 // O estado é sempre dito em texto, não só pela cor (exigência de acessibilidade do brief).
 const config: Record<StockStatus, { label: string; className: string }> = {
   in_stock: { label: "Disponível", className: "bg-olive/15 text-forest" },
-  low_stock: { label: "Últimas unidades", className: "bg-stock-low/15 text-stock-low" },
+  low_stock: { label: "Últimas unidades", className: "bg-stock-low/15 text-brown" },
   out_of_stock: { label: "Esgotado", className: "bg-stock-out/10 text-stock-out" },
 };
 

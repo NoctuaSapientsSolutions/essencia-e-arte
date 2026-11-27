@@ -63,7 +63,7 @@ export function ProductPurchase({ product, stock }: ProductPurchaseProps) {
         <PriceDisplay priceCents={variant.priceCents} showInstallments />
         <StockBadge status={status} />
         {status === "low_stock" && (
-          <p className="text-sm text-stock-low">Restam apenas {available} unidades desta opção.</p>
+          <p className="text-sm text-brown">Restam apenas {available} unidades desta opção.</p>
         )}
       </div>
 
