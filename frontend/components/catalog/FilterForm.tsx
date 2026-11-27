@@ -21,11 +21,12 @@ export function FilterForm({ filters, basePath, idPrefix }: FilterFormProps) {
   return (
     <form method="get" action={basePath} className="space-y-8">
       <fieldset className="space-y-3">
-        <legend className="mb-3 font-display text-lg text-forest">Ordenar por</legend>
+        <legend id={id("ordem-legend")} className="mb-3 font-display text-lg text-forest">Ordenar por</legend>
         <select
           id={id("ordem")}
           name="ordem"
           defaultValue={filters.ordem}
+          aria-labelledby={id("ordem-legend")}
           className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
         >
           {sortOptions.map((option) => (
@@ -37,11 +38,12 @@ export function FilterForm({ filters, basePath, idPrefix }: FilterFormProps) {
       </fieldset>
 
       <fieldset className="space-y-3">
-        <legend className="mb-3 font-display text-lg text-forest">Família olfativa</legend>
+        <legend id={id("familia-legend")} className="mb-3 font-display text-lg text-forest">Família olfativa</legend>
         <select
           id={id("familia")}
           name="familia"
           defaultValue={filters.familia ?? ""}
+          aria-labelledby={id("familia-legend")}
           className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm capitalize"
         >
           <option value="">Todas as famílias</option>
@@ -80,11 +82,12 @@ export function FilterForm({ filters, basePath, idPrefix }: FilterFormProps) {
       </fieldset>
 
       <fieldset className="space-y-3">
-        <legend className="mb-3 font-display text-lg text-forest">Faixa de preço</legend>
+        <legend id={id("preco-legend")} className="mb-3 font-display text-lg text-forest">Faixa de preço</legend>
         <select
           id={id("preco")}
           name="preco"
           defaultValue={filters.preco}
+          aria-labelledby={id("preco-legend")}
           className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
         >
           {priceOptions.map((option) => (
