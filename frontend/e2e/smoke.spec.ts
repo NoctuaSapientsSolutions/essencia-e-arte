@@ -12,34 +12,28 @@ test("categoria de essências lista produtos", async ({ page }) => {
   expect(await cards.count()).toBeGreaterThan(0);
 });
 
-// A rota usa Partial Prerendering: logo após a navegação, a página pode estar numa transição
-// momentânea entre o conteúdo anterior e o novo. Espera a contagem de produtos estabilizar
-// (mesmo valor em duas leituras seguidas) antes de comparar, para não ler um estado intermediário.
-async function countSettledProducts(page: import("@playwright/test").Page): Promise<number> {
-  await expect(page.locator("article").first()).toBeVisible();
-  await page.waitForLoadState("networkidle");
+// Dados fixos do seed (lib/mocks/catalog.ts / backend/prisma/seed.ts): a categoria "essências"
+// tem 4 produtos (bamboo, chá branco, baunilha, figo verde); só bamboo, baunilha e figo verde
+// têm "difusor" nas aplicações recomendadas, então o filtro deve deixar exatamente 3.
+const TOTAL_ESSENCIAS = 4;
+const TOTAL_ESSENCIAS_DIFUSOR = 3;
 
-  let count = await page.locator("article").count();
-  await expect
-    .poll(async () => {
-      const next = await page.locator("article").count();
-      const stable = next === count;
-      count = next;
-      return stable;
-    }, { timeout: 5000 })
-    .toBe(true);
-  return count;
+// Durante a navegação, o Next (Partial Prerendering) pode manter por um instante uma cópia
+// oculta do parágrafo de resumo; por isso filtra só pelo elemento :visible, para não esbarrar
+// em "strict mode violation" por dois elementos com o mesmo texto.
+function summaryText(page: import("@playwright/test").Page, total: number) {
+  return page.locator('p[aria-live="polite"]:visible', { hasText: `${total} produtos` });
 }
 
 test("filtro por aplicação reduz a lista de produtos", async ({ page }) => {
   await page.goto("/categorias/essencias");
-  const totalSemFiltro = await countSettledProducts(page);
+  // toHaveCount reage (poll) até o grid terminar de streamar; não precisa de espera fixa.
+  await expect(page.locator("article")).toHaveCount(TOTAL_ESSENCIAS);
+  await expect(summaryText(page, TOTAL_ESSENCIAS)).toBeVisible();
 
   await page.goto("/categorias/essencias?aplicacao=difusor");
-  const totalComFiltro = await countSettledProducts(page);
-
-  expect(totalComFiltro).toBeGreaterThan(0);
-  expect(totalComFiltro).toBeLessThan(totalSemFiltro);
+  await expect(page.locator("article")).toHaveCount(TOTAL_ESSENCIAS_DIFUSOR);
+  await expect(summaryText(page, TOTAL_ESSENCIAS_DIFUSOR)).toBeVisible();
 });
 
 test("adicionar ao carrinho atualiza o contador do cabeçalho", async ({ page }) => {
