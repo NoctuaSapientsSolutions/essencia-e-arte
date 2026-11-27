@@ -26,7 +26,9 @@ export function FavoriteButton({ productId, productName }: { productId: string; 
       type="button"
       onClick={toggle}
       aria-pressed={favorite}
-      aria-label={favorite ? `Remover ${productName} dos favoritos` : `Adicionar ${productName} aos favoritos`}
+      // O nome acessível precisa conter o texto visível do botão ("Favoritar" / "Nos favoritos"),
+      // senão falha o critério WCAG 2.5.3 (Label in Name).
+      aria-label={favorite ? `Nos favoritos — remover ${productName}` : `Favoritar ${productName}`}
       className={`inline-flex h-11 items-center gap-2 rounded-md border px-4 text-sm ${
         favorite ? "border-forest bg-forest text-cream" : "border-border text-forest hover:border-forest"
       }`}
